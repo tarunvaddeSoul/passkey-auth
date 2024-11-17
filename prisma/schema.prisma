@@ -1,0 +1,40 @@
+// This is your Prisma schema file
+datasource db {
+  provider = "postgresql" // or your database provider
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id               String          @id @default(uuid())
+  email            String          @unique
+  name             String?
+  currentChallenge String?
+  // One user can have multiple authenticators (passkeys)
+  authenticators   Authenticator[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([email])
+}
+
+model Authenticator {
+  id                   String   @id @default(uuid())
+  userId               String
+  credentialId         String   @unique
+  credentialPublicKey  Bytes
+  counter              BigInt   @default(0)
+  credentialDeviceType String
+  credentialBackedUp   Boolean  @default(false)
+  transports           String[] @default([])
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([credentialId])
+  @@index([userId])
+}
